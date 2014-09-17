@@ -28,7 +28,7 @@ dependencies {
 apply plugin: 'maven'
 uploadArchives {
     repositories.mavenDeployer {
-        repository(url: uri('../repo'))
+        repository(url: uri('../'))
         pom {
             version = '1.0'
             artifactId = 'library'
