@@ -1,12 +1,14 @@
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
                 xmlns:tools="http://schemas.android.com/tools"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 tools:context="${relativePackage}.${activityClass}">
-
-  <TextView
-      android:text="@string/hello_world"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content"/>
-
-</RelativeLayout>
+  <FrameLayout
+      android:layout_width="200dp"
+      android:layout_height="50dp">
+    <view android:layout_width="match_parent"
+          android:layout_height="match_parent"
+          class="tw.com.mobilogics.zxing.component.ZXingComponent" android:id="@+id/view"
+        />
+  </FrameLayout>
+</FrameLayout>
