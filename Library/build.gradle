@@ -23,4 +23,17 @@ dependencies {
     compile 'com.google.zxing:core:3.1.0'
 }
 
-apply from: 'https://raw.github.com/chrisbanes/gradle-mvn-push/master/gradle-mvn-push.gradle'
+//apply from: 'https://raw.github.com/chrisbanes/gradle-mvn-push/master/gradle-mvn-push.gradle'
+
+apply plugin: 'maven'
+uploadArchives {
+    repositories.mavenDeployer {
+        repository(url: uri('../repo'))
+        pom {
+            version = '1.0'
+            artifactId = 'library'
+            groupId = 'com.github.shen0816.ZXingComponent'
+        }
+    }
+}
+
