@@ -14,11 +14,9 @@ import com.commonsware.cwac.camera.SimpleCameraHost;
 
 import android.content.Context;
 import android.content.res.Configuration;
-import android.graphics.Point;
 import android.graphics.Rect;
 import android.hardware.Camera;
 import android.util.AttributeSet;
-import android.view.View;
 import android.widget.FrameLayout;
 
 import java.util.ArrayList;
@@ -27,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 
 import me.dm7.barcodescanner.core.DisplayUtils;
-import me.dm7.barcodescanner.core.ViewFinderView;
 
 /**
  * Created by chuck on 2014/9/15.
@@ -44,7 +41,7 @@ public class ZXingComponent extends FrameLayout implements Camera.PreviewCallbac
 
   private MultiFormatReader mMultiFormatReader;
 
-  private ViewFinderView mViewFinderView;
+//  private ViewFinderView mViewFinderView;
 
   private Rect mFramingRectInPreview;
 
@@ -68,20 +65,18 @@ public class ZXingComponent extends FrameLayout implements Camera.PreviewCallbac
 
   public ZXingComponent(Context context) {
     super(context);
-    initMultiFormatReader();
-    setupLayout();
   }
 
   public ZXingComponent(Context context, AttributeSet attrs) {
     super(context, attrs);
+//    setupLayout();
     initMultiFormatReader();
     setupLayout();
   }
 
   public ZXingComponent(Context context, AttributeSet attrs, int defStyle) {
     super(context, attrs, defStyle);
-    initMultiFormatReader();
-    setupLayout();
+//    setupLayout();
   }
 
   public void setAutoFocus(boolean isAutoFocus) {
@@ -93,8 +88,8 @@ public class ZXingComponent extends FrameLayout implements Camera.PreviewCallbac
   }
 
   private void setupLayout() {
-    mViewFinderView = new ViewFinderView(getContext());
-    mViewFinderView.setVisibility(View.INVISIBLE);
+//    mViewFinderView = new ViewFinderView(getContext());
+//    mViewFinderView.setVisibility(View.INVISIBLE);
     mCameraView = new CameraView(getContext());
     mCameraView.setHost(new SimpleCameraHost(getContext()));
     mCameraView.setPreviewCallback(this);
@@ -115,7 +110,7 @@ public class ZXingComponent extends FrameLayout implements Camera.PreviewCallbac
     }
     isOpen = true;
     mCameraView.onResume();
-    mViewFinderView.setVisibility(View.VISIBLE);
+//    mViewFinderView.setVisibility(View.VISIBLE);
   }
 
   public void stop() {
@@ -124,7 +119,7 @@ public class ZXingComponent extends FrameLayout implements Camera.PreviewCallbac
     }
     isOpen = false;
     mCameraView.onPause();
-    mViewFinderView.setVisibility(View.INVISIBLE);
+//    mViewFinderView.setVisibility(View.INVISIBLE);
   }
 
   public void autoFocus() {
@@ -193,47 +188,47 @@ public class ZXingComponent extends FrameLayout implements Camera.PreviewCallbac
     }
   }
 
-  public PlanarYUVLuminanceSource buildLuminanceSource(byte[] data, int width, int height) {
-    Rect rect = getFramingRectInPreview(width, height);
-    if (rect == null) {
-      return null;
-    }
-    // Go ahead and assume it's YUV rather than die.
-    PlanarYUVLuminanceSource source = null;
+//  public PlanarYUVLuminanceSource buildLuminanceSource(byte[] data, int width, int height) {
+//    Rect rect = getFramingRectInPreview(width, height);
+//    if (rect == null) {
+//      return null;
+//    }
+//    // Go ahead and assume it's YUV rather than die.
+//    PlanarYUVLuminanceSource source = null;
+//
+//    try {
+//      source = new PlanarYUVLuminanceSource(data, width, height, rect.left, rect.top,
+//          rect.width(), rect.height(), false);
+//    } catch (Exception e) {
+//    }
+//
+//    return source;
+//  }
 
-    try {
-      source = new PlanarYUVLuminanceSource(data, width, height, rect.left, rect.top,
-          rect.width(), rect.height(), false);
-    } catch (Exception e) {
-    }
-
-    return source;
-  }
-
-  public synchronized Rect getFramingRectInPreview(int width, int height) {
-    if (mFramingRectInPreview == null) {
-      Rect framingRect = mViewFinderView.getFramingRect();
-      if (framingRect == null) {
-        return null;
-      }
-      Rect rect = new Rect(framingRect);
-      Point screenResolution = DisplayUtils.getScreenResolution(getContext());
-      Point cameraResolution = new Point(width, height);
-
-      if (cameraResolution == null || screenResolution == null) {
-        // Called early, before init even finished
-        return null;
-      }
-
-      rect.left = rect.left * cameraResolution.x / screenResolution.x;
-      rect.right = rect.right * cameraResolution.x / screenResolution.x;
-      rect.top = rect.top * cameraResolution.y / screenResolution.y;
-      rect.bottom = rect.bottom * cameraResolution.y / screenResolution.y;
-
-      mFramingRectInPreview = rect;
-    }
-    return mFramingRectInPreview;
-  }
+//  public synchronized Rect getFramingRectInPreview(int width, int height) {
+//    if (mFramingRectInPreview == null) {
+//      Rect framingRect = mViewFinderView.getFramingRect();
+//      if (framingRect == null) {
+//        return null;
+//      }
+//      Rect rect = new Rect(framingRect);
+//      Point screenResolution = DisplayUtils.getScreenResolution(getContext());
+//      Point cameraResolution = new Point(width, height);
+//
+//      if (cameraResolution == null || screenResolution == null) {
+//        // Called early, before init even finished
+//        return null;
+//      }
+//
+//      rect.left = rect.left * cameraResolution.x / screenResolution.x;
+//      rect.right = rect.right * cameraResolution.x / screenResolution.x;
+//      rect.top = rect.top * cameraResolution.y / screenResolution.y;
+//      rect.bottom = rect.bottom * cameraResolution.y / screenResolution.y;
+//
+//      mFramingRectInPreview = rect;
+//    }
+//    return mFramingRectInPreview;
+//  }
 
   public interface ResultHandler {
 

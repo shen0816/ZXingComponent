@@ -5,6 +5,7 @@ import com.google.zxing.Result;
 import android.app.Activity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 
 import tw.com.mobilogics.zxing.component.ZXingComponent;
 
@@ -39,6 +40,10 @@ public class MainActivity extends Activity implements ZXingComponent.ResultHandl
   public void handleResult(Result rawResult) {
     Log.e(TAG, "Result : " + rawResult.getText());
     mZXingComponent.stop();
+//    mZXingComponent.start();
+  }
+
+  public void onClick(View view){
     mZXingComponent.start();
   }
 }
