@@ -88,62 +88,48 @@ public class CameraView extends ViewGroup implements AutoFocusCallback {
   }
 
   public void startCameraView() {
-    getActivity().runOnUiThread(new Runnable() {
-      @Override
-      public void run() {
-        setVisibility(View.VISIBLE);
-        if (camera == null) {
-          cameraId = getHost().getCameraId();
+    setVisibility(View.VISIBLE);
+    if (camera == null) {
+      cameraId = getHost().getCameraId();
 
-          if (cameraId >= 0) {
-            try {
-              camera = Camera.open(cameraId);
-              if (camera != null && mPreviewCallback != null) {
-                camera.setOneShotPreviewCallback(mPreviewCallback);
-              }
-
-              if (getActivity().getRequestedOrientation()
-                  != ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED) {
-                onOrientationChange.enable();
-              }
-
-              setCameraDisplayOrientation();
-            } catch (Exception e) {
-              getHost().onCameraFail(FailureReason.UNKNOWN);
-            }
-          } else {
-            getHost().onCameraFail(FailureReason.NO_CAMERAS_REPORTED);
+      if (cameraId >= 0) {
+        try {
+          camera = Camera.open(cameraId);
+          if (getActivity().getRequestedOrientation()
+              != ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED) {
+            onOrientationChange.enable();
           }
-        }else{
-          restartPreview();
+
+          setCameraDisplayOrientation();
+
+        } catch (Exception e) {
+          getHost().onCameraFail(FailureReason.UNKNOWN);
         }
+      } else {
+        getHost().onCameraFail(FailureReason.NO_CAMERAS_REPORTED);
       }
-    });
+    }else{
+      restartPreview();
+    }
+    if (camera != null && mPreviewCallback != null) {
+      camera.setOneShotPreviewCallback(mPreviewCallback);
+    }
   }
 
   public void stopCameraView() {
-    getActivity().runOnUiThread(new Runnable() {
-      @Override
-      public void run() {
-        if (camera != null) {
-          camera.setOneShotPreviewCallback(null);
-          setVisibility(View.GONE);
-        }
-      }
-    });
+    setVisibility(View.INVISIBLE);
+    if (camera != null) {
+      camera.setOneShotPreviewCallback(null);
+      stopPreview();
+    }
   }
 
   public void releaseCameraView(){
-    getActivity().runOnUiThread(new Runnable() {
-      @Override
-      public void run() {
-        if (camera != null)
-          previewDestroyed();
-        removeView(previewStrategy.getWidget());
-        onOrientationChange.disable();
-        lastPictureOrientation = -1;
-      }
-    });
+    if (camera != null)
+      previewDestroyed();
+    removeView(previewStrategy.getWidget());
+    onOrientationChange.disable();
+    lastPictureOrientation = -1;
   }
 
   @Override
