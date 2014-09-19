@@ -8,8 +8,8 @@ android {
         applicationId "tw.com.mobilogics.zxing.component"
         minSdkVersion 14
         targetSdkVersion 19
-        versionCode 2
-        versionName "1.0.1"
+        versionCode 1
+        versionName "1.0"
     }
     buildTypes {
         release {
@@ -30,7 +30,7 @@ uploadArchives {
     repositories.mavenDeployer {
         repository(url: uri('../'))
         pom {
-            version = '1.0.1'
+            version = '1.0'
             artifactId = 'library'
             groupId = 'com.github.shen0816.ZXingComponent'
         }

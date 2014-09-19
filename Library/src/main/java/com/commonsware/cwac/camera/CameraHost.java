@@ -14,9 +14,7 @@
 
 package com.commonsware.cwac.camera;
 
-import android.graphics.Bitmap;
 import android.hardware.Camera;
-import android.media.MediaRecorder;
 
 /**
  * Specification of a CameraHost, which is the primary way
@@ -63,16 +61,6 @@ public interface CameraHost {
   }
 
   /**
-   * Implement this to configure the Camera.Parameters just
-   * prior to taking a photo.
-   * 
-   * @param parameters
-   *          the Camera.Parameters to be modified
-   * @return the Camera.Parameters that was passed in
-   */
-  Camera.Parameters adjustPictureParameters(PictureTransaction xact, Camera.Parameters parameters);
-
-  /**
    * Implement this to configure the Camera.Parameters for
    * the purposes of the preview. Note that you will have
    * another chance to configure the Camera.Parameters for a
@@ -99,68 +87,11 @@ public interface CameraHost {
   void autoFocusUnavailable();
 
   /**
-   * This will be called by the library to give you a chance
-   * to configure the audio of the MediaRecorder, just prior
-   * to beginning to record a video. Please ONLY configure
-   * audio here.
-   * 
-   * @param cameraId
-   *          the camera that will be used for recording
-   * @param recorder
-   *          the MediaRecorder to be configured
-   */
-  void configureRecorderAudio(int cameraId, MediaRecorder recorder);
-
-  /**
-   * This will be called by the library to give you a chance
-   * to configure the output of the MediaRecorder, just
-   * prior to beginning to record a video. Please ONLY
-   * configure output here.
-   * 
-   * @param cameraId
-   *          the camera that will be used for recording
-   * @param recorder
-   *          the MediaRecorder to be configured
-   */
-  void configureRecorderOutput(int cameraId, MediaRecorder recorder);
-
-  /**
-   * This will be called by the library to give you a chance
-   * to configure the profile of the MediaRecorder, just
-   * prior to beginning to record a video. Please ONLY
-   * configure profile here.
-   * 
-   * @param cameraId
-   *          the camera that will be used for recording
-   * @param recorder
-   *          the MediaRecorder to be configured
-   */
-  void configureRecorderProfile(int cameraId, MediaRecorder recorder);
-
-  /**
    * @return the ID of the camera that you want to use for
    *         previews and picture/video taking with the
    *         associated CameraView instance
    */
   int getCameraId();
-
-  /**
-   * @return the DeviceProfile to use for custom-tailoring
-   *         the behavior of CameraView, to overcome
-   *         device-specific idiosyncrasies
-   */
-  DeviceProfile getDeviceProfile();
-
-  /**
-   * Called to allow you to be able to indicate what size
-   * photo should be taken.
-   * 
-   * @param parameters
-   *          the current camera parameters
-   * @return the size of photo to take (note: must be a
-   *         supported size!)
-   */
-  Camera.Size getPictureSize(PictureTransaction xact, Camera.Parameters parameters);
 
   /**
    * Called to allow you to indicate what size preview
@@ -207,12 +138,6 @@ public interface CameraHost {
       Camera.Size deviceHint);
 
   /**
-   * @return the Camera.ShutterCallback to be used with the
-   *         camera, for sound effects and such
-   */
-  Camera.ShutterCallback getShutterCallback();
-
-  /**
    * Called when something blows up in CameraView, to allow
    * you to alert the user as you see fit
    * 
@@ -220,47 +145,6 @@ public interface CameraHost {
    *          an Exception indicating what went wrong
    */
   void handleException(Exception e);
-
-  /**
-   * @return true if you want the saved output to be
-   *         mirrored when using the front-facing camera,
-   *         false to leave it alone
-   */
-  boolean mirrorFFC();
-
-  /**
-   * Called when a picture has been taken. This will be
-   * called on a background thread.
-   * 
-   * @param bitmap
-   *          Bitmap of the picture
-   */
-  void saveImage(PictureTransaction xact, Bitmap bitmap);
-
-  /**
-   * Called when a picture has been taken. This will be
-   * called on a background thread.
-   * 
-   * @param image
-   *          byte array of the picture data (e.g., JPEG)
-   */
-  void saveImage(PictureTransaction xact, byte[] image);
-
-  /**
-   * @return true if you want the camera to keep the preview
-   *         disabled after taking a picture (e.g., you want
-   *         to present the picture to the user for editing
-   *         or processing), false if you want preview to be
-   *         re-enabled (e.g., you want the user to be able
-   *         to take another picture right away)
-   */
-  boolean useSingleShotMode();
-
-  /**
-   * @return a RecordingHint value indicating what you
-   *         intend to use the camera for
-   */
-  RecordingHint getRecordingHint();
 
   /**
    * Called when we failed to open the camera for one reason
@@ -273,5 +157,4 @@ public interface CameraHost {
   
   boolean useFullBleedPreview();
   
-  float maxPictureCleanupHeapUsage();
 }

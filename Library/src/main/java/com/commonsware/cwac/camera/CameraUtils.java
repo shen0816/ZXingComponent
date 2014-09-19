@@ -127,10 +127,7 @@ public class CameraUtils {
       // android.util.Log.d("CWAC-Camera",
       // String.format("%d x %d", size.width, size.height));
 
-      if (!enforceProfile
-          || (size.height <= host.getDeviceProfile()
-                                 .getMaxPictureHeight() && size.height >= host.getDeviceProfile()
-                                                                              .getMinPictureHeight())) {
+      if (!enforceProfile) {
         if (result == null) {
           result=size;
         }

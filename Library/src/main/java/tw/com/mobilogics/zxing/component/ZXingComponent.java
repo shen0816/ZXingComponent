@@ -13,10 +13,12 @@ import com.commonsware.cwac.camera.CameraView;
 import com.commonsware.cwac.camera.SimpleCameraHost;
 
 import android.content.Context;
-import android.content.res.Configuration;
+import android.graphics.Point;
 import android.graphics.Rect;
 import android.hardware.Camera;
 import android.util.AttributeSet;
+import android.util.Log;
+import android.view.View;
 import android.widget.FrameLayout;
 
 import java.util.ArrayList;
@@ -25,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 import me.dm7.barcodescanner.core.DisplayUtils;
+import me.dm7.barcodescanner.core.ViewFinderView;
 
 /**
  * Created by chuck on 2014/9/15.
@@ -41,7 +44,7 @@ public class ZXingComponent extends FrameLayout implements Camera.PreviewCallbac
 
   private MultiFormatReader mMultiFormatReader;
 
-//  private ViewFinderView mViewFinderView;
+  private ViewFinderView mViewFinderView;
 
   private Rect mFramingRectInPreview;
 
@@ -75,6 +78,12 @@ public class ZXingComponent extends FrameLayout implements Camera.PreviewCallbac
     setupLayout();
   }
 
+  public ZXingComponent(Context context, AttributeSet attrs, int defStyle) {
+    super(context, attrs, defStyle);
+    initMultiFormatReader();
+    setupLayout();
+  }
+
   public void setAutoFocus(boolean isAutoFocus) {
     mCameraView.setAutoFocus(isAutoFocus);
   }
@@ -84,8 +93,8 @@ public class ZXingComponent extends FrameLayout implements Camera.PreviewCallbac
   }
 
   private void setupLayout() {
-//    mViewFinderView = new ViewFinderView(getContext());
-//    mViewFinderView.setVisibility(View.INVISIBLE);
+    mViewFinderView = new ViewFinderView(getContext());
+    mViewFinderView.setVisibility(View.INVISIBLE);
     mCameraView = new CameraView(getContext());
     mCameraView.setHost(new SimpleCameraHost(getContext()));
     mCameraView.setPreviewCallback(this);
@@ -105,8 +114,8 @@ public class ZXingComponent extends FrameLayout implements Camera.PreviewCallbac
       return;
     }
     isOpen = true;
-    mCameraView.startCameraView();
-//    mViewFinderView.setVisibility(View.VISIBLE);
+    mCameraView.onResume();
+    mViewFinderView.setVisibility(View.VISIBLE);
   }
 
   public void stop() {
@@ -114,14 +123,8 @@ public class ZXingComponent extends FrameLayout implements Camera.PreviewCallbac
       return;
     }
     isOpen = false;
-    mCameraView.stopCameraView();
-//    mViewFinderView.setVisibility(View.INVISIBLE);
-  }
-
-  public void release(){
-   if (mCameraView != null) {
-     mCameraView.releaseCameraView();
-   }
+    mCameraView.onPause();
+    mViewFinderView.setVisibility(View.INVISIBLE);
   }
 
   public void autoFocus() {
@@ -135,32 +138,51 @@ public class ZXingComponent extends FrameLayout implements Camera.PreviewCallbac
     int width = size.width;
     int height = size.height;
 
-    if (DisplayUtils.getScreenOrientation(getContext()) == Configuration.ORIENTATION_PORTRAIT) {
-      byte[] rotatedData = new byte[bytes.length];
-      for (int y = 0; y < height; y++) {
-        for (int x = 0; x < width; x++) {
-          rotatedData[x * height + height - y - 1] = bytes[x + y * width];
-        }
-      }
-      int tmp = width;
-      width = height;
-      height = tmp;
-      bytes = rotatedData;
-      rotatedData = null;
-    }
-
+//    if (DisplayUtils.getScreenOrientation(getContext()) == Configuration.ORIENTATION_PORTRAIT) {
+//      byte[] rotatedData = new byte[bytes.length];
+//      for (int y = 0; y < height; y++) {
+//        for (int x = 0; x < width; x++) {
+//          rotatedData[x * height + height - y - 1] = bytes[x + y * width];
+//        }
+//      }
+//      int tmp = width;
+//      width = height;
+//      height = tmp;
+//      bytes = rotatedData;
+//    }
+    Point point = DisplayUtils.getScreenResolution(getContext());
     int centerX = width / 2;
     int centerY = height / 2;
-    int viewCenterX = mCameraView.getWidth() / 2;
-    int viewCenterY = mCameraView.getHeight() / 2;
+    double vWidth = (double)width / (double)point.x;
+    double vHeight = (double)height / (double)point.y;
+    int viewCenterX = width / 2;
+    int viewCenterY = height / 2;
+    width = (int)(vWidth * point.x);
+    height = (int)(vHeight * point.y);
 
-    Result rawResult = null;
-    PlanarYUVLuminanceSource source = new PlanarYUVLuminanceSource(bytes,
+    Log.d(TAG, String.format("width : %d ,"
+            + "height : %d ,"
+            + "centerX - viewCenterX : %d ,"
+            + "centerY - viewCenterY : %d ,"
+            + "mCameraView.getWidth() : %d ,"
+            + "mCameraView.getHeight() : %d",
         width,
         height,
         centerX - viewCenterX,
         centerY - viewCenterY,
         mCameraView.getWidth(),
+        mCameraView.getHeight()
+    ));
+
+
+    Result rawResult = null;
+    PlanarYUVLuminanceSource source = null;
+    source = new PlanarYUVLuminanceSource(bytes,
+        width,
+        height,
+        centerX - viewCenterX,
+        centerY - viewCenterY,
+        width,
         mCameraView.getHeight(),
         false);
 
@@ -181,8 +203,6 @@ public class ZXingComponent extends FrameLayout implements Camera.PreviewCallbac
       } finally {
         mMultiFormatReader.reset();
       }
-      source = null;
-      bitmap = null;
     }
 
     if (rawResult != null && mResultHandler != null) {
@@ -194,47 +214,47 @@ public class ZXingComponent extends FrameLayout implements Camera.PreviewCallbac
     }
   }
 
-//  public PlanarYUVLuminanceSource buildLuminanceSource(byte[] data, int width, int height) {
-//    Rect rect = getFramingRectInPreview(width, height);
-//    if (rect == null) {
-//      return null;
-//    }
-//    // Go ahead and assume it's YUV rather than die.
-//    PlanarYUVLuminanceSource source = null;
-//
-//    try {
-//      source = new PlanarYUVLuminanceSource(data, width, height, rect.left, rect.top,
-//          rect.width(), rect.height(), false);
-//    } catch (Exception e) {
-//    }
-//
-//    return source;
-//  }
+  public PlanarYUVLuminanceSource buildLuminanceSource(byte[] data, int width, int height) {
+    Rect rect = getFramingRectInPreview(width, height);
+    if (rect == null) {
+      return null;
+    }
+    // Go ahead and assume it's YUV rather than die.
+    PlanarYUVLuminanceSource source = null;
 
-//  public synchronized Rect getFramingRectInPreview(int width, int height) {
-//    if (mFramingRectInPreview == null) {
-//      Rect framingRect = mViewFinderView.getFramingRect();
-//      if (framingRect == null) {
-//        return null;
-//      }
-//      Rect rect = new Rect(framingRect);
-//      Point screenResolution = DisplayUtils.getScreenResolution(getContext());
-//      Point cameraResolution = new Point(width, height);
-//
-//      if (cameraResolution == null || screenResolution == null) {
-//        // Called early, before init even finished
-//        return null;
-//      }
-//
-//      rect.left = rect.left * cameraResolution.x / screenResolution.x;
-//      rect.right = rect.right * cameraResolution.x / screenResolution.x;
-//      rect.top = rect.top * cameraResolution.y / screenResolution.y;
-//      rect.bottom = rect.bottom * cameraResolution.y / screenResolution.y;
-//
-//      mFramingRectInPreview = rect;
-//    }
-//    return mFramingRectInPreview;
-//  }
+    try {
+      source = new PlanarYUVLuminanceSource(data, width, height, rect.left, rect.top,
+          rect.width(), rect.height(), false);
+    } catch (Exception e) {
+    }
+
+    return source;
+  }
+
+  public synchronized Rect getFramingRectInPreview(int width, int height) {
+    if (mFramingRectInPreview == null) {
+      Rect framingRect = mViewFinderView.getFramingRect();
+      if (framingRect == null) {
+        return null;
+      }
+      Rect rect = new Rect(framingRect);
+      Point screenResolution = DisplayUtils.getScreenResolution(getContext());
+      Point cameraResolution = new Point(width, height);
+
+      if (cameraResolution == null || screenResolution == null) {
+        // Called early, before init even finished
+        return null;
+      }
+
+      rect.left = rect.left * cameraResolution.x / screenResolution.x;
+      rect.right = rect.right * cameraResolution.x / screenResolution.x;
+      rect.top = rect.top * cameraResolution.y / screenResolution.y;
+      rect.bottom = rect.bottom * cameraResolution.y / screenResolution.y;
+
+      mFramingRectInPreview = rect;
+    }
+    return mFramingRectInPreview;
+  }
 
   public interface ResultHandler {
 

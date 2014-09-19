@@ -17,6 +17,7 @@ package com.commonsware.cwac.camera;
 
 import com.commonsware.cwac.camera.CameraHost.FailureReason;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.ActivityInfo;
@@ -24,6 +25,8 @@ import android.hardware.Camera;
 import android.hardware.Camera.AutoFocusCallback;
 import android.hardware.Camera.CameraInfo;
 import android.os.Build;
+import android.os.Handler;
+import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.OrientationEventListener;
@@ -67,7 +70,28 @@ public class CameraView extends ViewGroup implements AutoFocusCallback {
 
   public CameraView(Context context) {
     super(context);
+
     onOrientationChange = new OnOrientationChange(context.getApplicationContext());
+  }
+
+  public CameraView(Context context, AttributeSet attrs) {
+    this(context, attrs, 0);
+  }
+
+  public CameraView(Context context, AttributeSet attrs, int defStyle) {
+    super(context, attrs, defStyle);
+
+    onOrientationChange = new OnOrientationChange(context.getApplicationContext());
+
+    if (context instanceof CameraHostProvider) {
+      setHost(((CameraHostProvider) context).getCameraHost());
+    }
+//    else {
+//      throw new IllegalArgumentException("To use the two- or "
+//          + "three-parameter constructors on CameraView, "
+//          + "your activity needs to implement the "
+//          + "CameraHostProvider interface");
+//    }
   }
 
   public void setAutoFocus(boolean isAutoFocus) {
@@ -78,23 +102,27 @@ public class CameraView extends ViewGroup implements AutoFocusCallback {
     return (host);
   }
 
+  // must call this after constructor, before onResume()
+
   public void setHost(CameraHost host) {
     this.host = host;
-
-    if (host.getDeviceProfile().useTextureView()) {
-      previewStrategy = new SurfacePreviewStrategy(this);
-      addView(previewStrategy.getWidget());
-    }
+    previewStrategy = new SurfacePreviewStrategy(this);
   }
 
-  public void startCameraView() {
-    setVisibility(View.VISIBLE);
+  @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+  public void onResume() {
+    addView(previewStrategy.getWidget());
+
     if (camera == null) {
       cameraId = getHost().getCameraId();
 
       if (cameraId >= 0) {
         try {
           camera = Camera.open(cameraId);
+          if (camera != null && mPreviewCallback != null) {
+            camera.setOneShotPreviewCallback(mPreviewCallback);
+          }
+
           if (getActivity().getRequestedOrientation()
               != ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED) {
             onOrientationChange.enable();
@@ -102,35 +130,32 @@ public class CameraView extends ViewGroup implements AutoFocusCallback {
 
           setCameraDisplayOrientation();
 
+          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH
+              && getHost() instanceof Camera.FaceDetectionListener) {
+            camera.setFaceDetectionListener((Camera.FaceDetectionListener) getHost());
+          }
         } catch (Exception e) {
           getHost().onCameraFail(FailureReason.UNKNOWN);
         }
       } else {
         getHost().onCameraFail(FailureReason.NO_CAMERAS_REPORTED);
       }
-    }else{
-      restartPreview();
-    }
-    if (camera != null && mPreviewCallback != null) {
-      camera.setOneShotPreviewCallback(mPreviewCallback);
     }
   }
 
-  public void stopCameraView() {
-    setVisibility(View.INVISIBLE);
+  public void onPause() {
+
     if (camera != null) {
       camera.setOneShotPreviewCallback(null);
-      stopPreview();
-    }
-  }
-
-  public void releaseCameraView(){
-    if (camera != null)
       previewDestroyed();
+    }
+
     removeView(previewStrategy.getWidget());
     onOrientationChange.disable();
     lastPictureOrientation = -1;
   }
+
+  // based on CameraPreview.java from ApiDemos
 
   @Override
   protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
@@ -140,34 +165,13 @@ public class CameraView extends ViewGroup implements AutoFocusCallback {
         resolveSize(getSuggestedMinimumHeight(), heightMeasureSpec);
     setMeasuredDimension(width, height);
 
+    Log.d(TAG,String.format("width : %d , height : %d",width,height));
+
     if (width > 0 && height > 0) {
       if (camera != null) {
         Camera.Size newSize = null;
 
         try {
-          if (getHost().getRecordingHint() != CameraHost.RecordingHint.STILL_ONLY) {
-            // Camera.Size deviceHint=
-            // host.getDeviceProfile()
-            // .getPreferredPreviewSizeForVideo(getDisplayOrientation(),
-            // width,
-            // height,
-            // camera.getParameters());
-
-            newSize =
-                getHost().getPreferredPreviewSizeForVideo(getDisplayOrientation(),
-                    width,
-                    height,
-                    camera.getParameters(),
-                    null);
-
-            // if (newSize != null) {
-            // android.util.Log.wtf("CameraView",
-            // String.format("getPreferredPreviewSizeForVideo: %d x %d",
-            // newSize.width,
-            // newSize.height));
-            // }
-          }
-
           if (newSize == null || newSize.width * newSize.height < 65536) {
             newSize =
                 getHost().getPreviewSize(getDisplayOrientation(),
@@ -206,6 +210,8 @@ public class CameraView extends ViewGroup implements AutoFocusCallback {
       final int height = b - t;
       int previewWidth = width;
       int previewHeight = height;
+
+      // handle orientation
 
       if (previewSize != null) {
         if (getDisplayOrientation() == 90
@@ -268,15 +274,6 @@ public class CameraView extends ViewGroup implements AutoFocusCallback {
     }
   }
 
-  private Runnable autoFocusRunnable = new Runnable() {
-    @Override
-    public void run() {
-      if (camera != null && inPreview) {
-        autoFocus();
-      }
-    }
-  };
-
   public void cancelAutoFocus() {
     camera.cancelAutoFocus();
   }
@@ -288,48 +285,17 @@ public class CameraView extends ViewGroup implements AutoFocusCallback {
   @Override
   public void onAutoFocus(boolean success, final Camera camera) {
     isAutoFocusing = false;
+
     if (isAutoFocus)
-      postDelayed(autoFocusRunnable, 1000);
+      new Handler().postDelayed(new Runnable() {
+        @Override
+        public void run() {
+          if (camera != null && inPreview) {
+            autoFocus();
+          }
+        }
+      }, 1000);
   }
-
-  public String getFlashMode() {
-    return (camera.getParameters().getFlashMode());
-  }
-
-  public void setFlashMode(String mode) {
-    if (camera != null) {
-      Camera.Parameters params = camera.getParameters();
-
-      params.setFlashMode(mode);
-      camera.setParameters(params);
-    }
-  }
-
-  public ZoomTransaction zoomTo(int level) {
-    if (camera == null) {
-      throw new IllegalStateException(
-          "Yes, we have no camera, we have no camera today");
-    } else {
-      Camera.Parameters params = camera.getParameters();
-
-      if (level >= 0 && level <= params.getMaxZoom()) {
-        return (new ZoomTransaction(camera, level));
-      } else {
-        throw new IllegalArgumentException(
-            String.format("Invalid zoom level: %d",
-                level));
-      }
-    }
-  }
-
-  public boolean doesZoomReallyWork() {
-    CameraInfo info = new CameraInfo();
-    Camera.getCameraInfo(getHost().getCameraId(), info);
-
-    return (getHost().getDeviceProfile()
-        .doesZoomActuallyWork(info.facing == CameraInfo.CAMERA_FACING_FRONT));
-  }
-
   void previewCreated() {
     if (camera != null) {
       try {
@@ -345,7 +311,6 @@ public class CameraView extends ViewGroup implements AutoFocusCallback {
       previewStopped();
       camera.release();
       camera = null;
-      System.gc();
     }
   }
 
@@ -364,16 +329,12 @@ public class CameraView extends ViewGroup implements AutoFocusCallback {
     initPreview(w, h, true);
   }
 
+  @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
   public void initPreview(int w, int h, boolean firstRun) {
     if (camera != null) {
       Camera.Parameters parameters = camera.getParameters();
 
       parameters.setPreviewSize(previewSize.width, previewSize.height);
-
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
-        parameters
-            .setRecordingHint(getHost().getRecordingHint() != CameraHost.RecordingHint.STILL_ONLY);
-      }
 
       requestLayout();
 
@@ -392,7 +353,6 @@ public class CameraView extends ViewGroup implements AutoFocusCallback {
 
   private void stopPreview() {
     inPreview = false;
-    cancelAutoFocus();
     getHost().autoFocusUnavailable();
     camera.stopPreview();
   }
