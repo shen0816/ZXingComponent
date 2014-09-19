@@ -15,7 +15,6 @@
 package com.commonsware.cwac.camera;
 
 import android.hardware.Camera;
-import android.media.MediaRecorder;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
@@ -54,11 +53,6 @@ class SurfacePreviewStrategy implements PreviewStrategy,
   @Override
   public void attach(Camera camera) throws IOException {
     camera.setPreviewDisplay(previewHolder);
-  }
-
-  @Override
-  public void attach(MediaRecorder recorder) {
-    recorder.setPreviewDisplay(previewHolder.getSurface());
   }
 
   @Override

@@ -32,7 +32,7 @@ import android.media.MediaRecorder;
  * SimpleCameraHost and override where needed, or implement
  * your own CameraHost from scratch. *
  */
-public interface CameraHost extends Camera.AutoFocusCallback {
+public interface CameraHost {
   /**
    * Indication of what purpose we plan to put the camera
    * towards. If your use of the camera is single-purpose,

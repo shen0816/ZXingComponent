@@ -19,7 +19,6 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.hardware.Camera;
 import android.media.CamcorderProfile;
-import android.media.MediaActionSound;
 import android.media.MediaRecorder;
 import android.media.MediaScannerConnection;
 import android.os.Build;
@@ -225,15 +224,6 @@ public class SimpleCameraHost implements CameraHost {
     }
     catch (java.io.IOException e) {
       handleException(e);
-    }
-  }
-
-  @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-  @Override
-  public void onAutoFocus(boolean success, Camera camera) {
-    if (success
-        && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-      new MediaActionSound().play(MediaActionSound.FOCUS_COMPLETE);
     }
   }
 

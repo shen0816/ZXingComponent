@@ -65,18 +65,14 @@ public class ZXingComponent extends FrameLayout implements Camera.PreviewCallbac
 
   public ZXingComponent(Context context) {
     super(context);
-  }
-
-  public ZXingComponent(Context context, AttributeSet attrs) {
-    super(context, attrs);
-//    setupLayout();
     initMultiFormatReader();
     setupLayout();
   }
 
-  public ZXingComponent(Context context, AttributeSet attrs, int defStyle) {
-    super(context, attrs, defStyle);
-//    setupLayout();
+  public ZXingComponent(Context context, AttributeSet attrs) {
+    super(context, attrs);
+    initMultiFormatReader();
+    setupLayout();
   }
 
   public void setAutoFocus(boolean isAutoFocus) {
@@ -109,7 +105,7 @@ public class ZXingComponent extends FrameLayout implements Camera.PreviewCallbac
       return;
     }
     isOpen = true;
-    mCameraView.onResume();
+    mCameraView.startCameraView();
 //    mViewFinderView.setVisibility(View.VISIBLE);
   }
 
@@ -118,8 +114,14 @@ public class ZXingComponent extends FrameLayout implements Camera.PreviewCallbac
       return;
     }
     isOpen = false;
-    mCameraView.onPause();
+    mCameraView.stopCameraView();
 //    mViewFinderView.setVisibility(View.INVISIBLE);
+  }
+
+  public void release(){
+   if (mCameraView != null) {
+     mCameraView.releaseCameraView();
+   }
   }
 
   public void autoFocus() {
@@ -144,7 +146,9 @@ public class ZXingComponent extends FrameLayout implements Camera.PreviewCallbac
       width = height;
       height = tmp;
       bytes = rotatedData;
+      rotatedData = null;
     }
+
     int centerX = width / 2;
     int centerY = height / 2;
     int viewCenterX = mCameraView.getWidth() / 2;
@@ -177,6 +181,8 @@ public class ZXingComponent extends FrameLayout implements Camera.PreviewCallbac
       } finally {
         mMultiFormatReader.reset();
       }
+      source = null;
+      bitmap = null;
     }
 
     if (rawResult != null && mResultHandler != null) {
