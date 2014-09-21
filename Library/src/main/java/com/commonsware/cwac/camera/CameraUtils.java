@@ -112,42 +112,6 @@ public class CameraUtils {
     return(optimalSize);
   }
 
-  public static Size getLargestPictureSize(CameraHost host,
-                                                  Camera.Parameters parameters) {
-    return(getLargestPictureSize(host, parameters, true));
-  }
-
-  public static Size getLargestPictureSize(CameraHost host,
-                                                  Camera.Parameters parameters,
-                                                  boolean enforceProfile) {
-    Size result=null;
-
-    for (Size size : parameters.getSupportedPictureSizes()) {
-
-      // android.util.Log.d("CWAC-Camera",
-      // String.format("%d x %d", size.width, size.height));
-
-      if (!enforceProfile) {
-        if (result == null) {
-          result=size;
-        }
-        else {
-          int resultArea=result.width * result.height;
-          int newArea=size.width * size.height;
-
-          if (newArea > resultArea) {
-            result=size;
-          }
-        }
-      }
-    }
-
-    if (result == null && enforceProfile) {
-      result=getLargestPictureSize(host, parameters, false);
-    }
-
-    return(result);
-  }
 
   public static Size getSmallestPictureSize(Camera.Parameters parameters) {
     Size result=null;

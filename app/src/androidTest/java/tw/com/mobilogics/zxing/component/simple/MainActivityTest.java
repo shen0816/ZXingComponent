@@ -37,13 +37,13 @@ public class MainActivityTest extends ActivityInstrumentationTestCase2<MainActiv
   }
 
   public void testScan(){
-    for (int i = 1; i <= 2000;i++){
+    for (int i = 1; i <= 5000;i++){
       System.out.println("index : " + i);
 //      assertEquals("4800010995558", scan());
       scan();
       assertEquals(true,true);
     }
-    mZXingComponent.release();
+//    mZXingComponent.release();
   }
 
   public String scan(){

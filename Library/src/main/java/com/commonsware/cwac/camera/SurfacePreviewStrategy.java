@@ -27,12 +27,10 @@ class SurfacePreviewStrategy implements PreviewStrategy,
   private SurfaceView preview=null;
   private SurfaceHolder previewHolder=null;
 
-  @SuppressWarnings("deprecation")
-  SurfacePreviewStrategy(CameraView cameraView) {
+  public SurfacePreviewStrategy(CameraView cameraView) {
     this.cameraView=cameraView;
     preview=new SurfaceView(cameraView.getContext());
     previewHolder=preview.getHolder();
-    previewHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
     previewHolder.addCallback(this);
   }
 

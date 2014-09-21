@@ -10,9 +10,9 @@ import com.google.zxing.Result;
 import com.google.zxing.common.HybridBinarizer;
 
 import com.commonsware.cwac.camera.CameraView;
-import com.commonsware.cwac.camera.SimpleCameraHost;
 
 import android.content.Context;
+import android.content.res.Configuration;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.hardware.Camera;
@@ -96,7 +96,6 @@ public class ZXingComponent extends FrameLayout implements Camera.PreviewCallbac
     mViewFinderView = new ViewFinderView(getContext());
     mViewFinderView.setVisibility(View.INVISIBLE);
     mCameraView = new CameraView(getContext());
-    mCameraView.setHost(new SimpleCameraHost(getContext()));
     mCameraView.setPreviewCallback(this);
     addView(mCameraView);
 //    addView(mViewFinderView);
@@ -138,42 +137,32 @@ public class ZXingComponent extends FrameLayout implements Camera.PreviewCallbac
     int width = size.width;
     int height = size.height;
 
-//    if (DisplayUtils.getScreenOrientation(getContext()) == Configuration.ORIENTATION_PORTRAIT) {
-//      byte[] rotatedData = new byte[bytes.length];
-//      for (int y = 0; y < height; y++) {
-//        for (int x = 0; x < width; x++) {
-//          rotatedData[x * height + height - y - 1] = bytes[x + y * width];
-//        }
-//      }
-//      int tmp = width;
-//      width = height;
-//      height = tmp;
-//      bytes = rotatedData;
-//    }
-    Point point = DisplayUtils.getScreenResolution(getContext());
+    Log.d(TAG,String.format("onPreviewFrame width : %d, height : %d",width, height));
+
+    if (DisplayUtils.getScreenOrientation(getContext()) == Configuration.ORIENTATION_PORTRAIT) {
+      byte[] rotatedData = new byte[bytes.length];
+      for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+          rotatedData[x * height + height - y - 1] = bytes[x + y * width];
+        }
+      }
+      int tmp = width;
+      width = height;
+      height = tmp;
+      bytes = rotatedData;
+    }
+
+//    Point point = DisplayUtils.getScreenResolution(getContext());
     int centerX = width / 2;
     int centerY = height / 2;
-    double vWidth = (double)width / (double)point.x;
-    double vHeight = (double)height / (double)point.y;
-    int viewCenterX = width / 2;
-    int viewCenterY = height / 2;
-    width = (int)(vWidth * point.x);
-    height = (int)(vHeight * point.y);
-
-    Log.d(TAG, String.format("width : %d ,"
-            + "height : %d ,"
-            + "centerX - viewCenterX : %d ,"
-            + "centerY - viewCenterY : %d ,"
-            + "mCameraView.getWidth() : %d ,"
-            + "mCameraView.getHeight() : %d",
-        width,
-        height,
-        centerX - viewCenterX,
-        centerY - viewCenterY,
-        mCameraView.getWidth(),
-        mCameraView.getHeight()
-    ));
-
+//    double vWidth = (double)width / (double)point.x;
+//    double vHeight = (double)height / (double)point.y;
+//    int viewCenterX = width / 2;
+//    int viewCenterY = height / 2;
+    int viewCenterX = getWidth() / 2;
+    int viewCenterY = getHeight() / 2;
+//    width = (int)(vWidth * point.x);
+//    height = (int)(vHeight * point.y);
 
     Result rawResult = null;
     PlanarYUVLuminanceSource source = null;
