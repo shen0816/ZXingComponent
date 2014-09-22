@@ -137,7 +137,6 @@ public class ZXingComponent extends FrameLayout implements Camera.PreviewCallbac
     int width = size.width;
     int height = size.height;
 
-    Log.d(TAG,String.format("onPreviewFrame width : %d, height : %d",width, height));
 
     if (DisplayUtils.getScreenOrientation(getContext()) == Configuration.ORIENTATION_PORTRAIT) {
       byte[] rotatedData = new byte[bytes.length];
@@ -146,23 +145,18 @@ public class ZXingComponent extends FrameLayout implements Camera.PreviewCallbac
           rotatedData[x * height + height - y - 1] = bytes[x + y * width];
         }
       }
-      int tmp = width;
-      width = height;
-      height = tmp;
+//      int tmp = width;
+//      width = height;
+//      height = tmp;
       bytes = rotatedData;
     }
 
-//    Point point = DisplayUtils.getScreenResolution(getContext());
+    Log.d(TAG,String.format("onPreviewFrame width : %d, height : %d",width, height));
+
     int centerX = width / 2;
     int centerY = height / 2;
-//    double vWidth = (double)width / (double)point.x;
-//    double vHeight = (double)height / (double)point.y;
-//    int viewCenterX = width / 2;
-//    int viewCenterY = height / 2;
     int viewCenterX = getWidth() / 2;
     int viewCenterY = getHeight() / 2;
-//    width = (int)(vWidth * point.x);
-//    height = (int)(vHeight * point.y);
 
     Result rawResult = null;
     PlanarYUVLuminanceSource source = null;

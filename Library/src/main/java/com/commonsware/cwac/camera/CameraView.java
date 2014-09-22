@@ -170,11 +170,12 @@ public class CameraView extends ViewGroup implements AutoFocusCallback {
         resolveSize(getSuggestedMinimumHeight(), heightMeasureSpec);
     setMeasuredDimension(width, height);
 
+    Log.d(TAG,String.format(" 111111 width : %d , height : %d",width,height));
+
     if (width > 0 && height > 0) {
       if (camera != null) {
-        Camera.Size newSize = camera.getParameters().getPreferredPreviewSizeForVideo();
-//        List<Camera.Size> list = camera.getParameters().getSupportedPreviewSizes();
-//        newSize = getOptimalPreviewSize(list,width,height);
+        Camera.Size newSize = null;
+//            newSize = camera.getParameters().getPreferredPreviewSizeForVideo();
 
         try {
           if (newSize == null || newSize.width * newSize.height < 65536) {
@@ -266,10 +267,11 @@ public class CameraView extends ViewGroup implements AutoFocusCallback {
         }
       }
 
+      Log.d(TAG,String.format("previewWidth : $d , previewHeight : %d",previewWidth ,previewHeight));
+
       boolean useFirstStrategy =
           (width * previewHeight > height * previewWidth);
       boolean useFullBleed = true;
-
       if ((useFirstStrategy && !useFullBleed)
           || (!useFirstStrategy && useFullBleed)) {
         final int scaledChildWidth =
