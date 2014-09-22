@@ -33,7 +33,6 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import java.io.IOException;
-import java.util.List;
 
 public class CameraView extends ViewGroup implements AutoFocusCallback {
 
@@ -63,11 +62,13 @@ public class CameraView extends ViewGroup implements AutoFocusCallback {
 
   private Camera.PreviewCallback mPreviewCallback = null;
 
+  private RecordingHint mRecordingHint = RecordingHint.NONE;
+
+  private DeviceProfile mProfile = null;
+
   public CameraView(Context context) {
     super(context);
-
-    onOrientationChange = new OnOrientationChange(context.getApplicationContext());
-    previewStrategy = new SurfacePreviewStrategy(this);
+    initLayout(context);
   }
 
   public CameraView(Context context, AttributeSet attrs) {
@@ -76,9 +77,13 @@ public class CameraView extends ViewGroup implements AutoFocusCallback {
 
   public CameraView(Context context, AttributeSet attrs, int defStyle) {
     super(context, attrs, defStyle);
+    initLayout(context);
+  }
 
+  private void initLayout(Context context){
     onOrientationChange = new OnOrientationChange(context.getApplicationContext());
     previewStrategy = new SurfacePreviewStrategy(this);
+    mProfile = DeviceProfile.getInstance(context);
   }
 
   public void setAutoFocus(boolean isAutoFocus) {
@@ -168,6 +173,7 @@ public class CameraView extends ViewGroup implements AutoFocusCallback {
         resolveSize(getSuggestedMinimumWidth(), widthMeasureSpec);
     final int height =
         resolveSize(getSuggestedMinimumHeight(), heightMeasureSpec);
+
     setMeasuredDimension(width, height);
 
     Log.d(TAG,String.format(" 111111 width : %d , height : %d",width,height));
@@ -175,7 +181,10 @@ public class CameraView extends ViewGroup implements AutoFocusCallback {
     if (width > 0 && height > 0) {
       if (camera != null) {
         Camera.Size newSize = null;
-//            newSize = camera.getParameters().getPreferredPreviewSizeForVideo();
+
+        if (getRecordingHint() != RecordingHint.STILL_ONLY){
+          newSize = camera.getParameters().getPreferredPreviewSizeForVideo();
+        }
 
         try {
           if (newSize == null || newSize.width * newSize.height < 65536) {
@@ -192,6 +201,7 @@ public class CameraView extends ViewGroup implements AutoFocusCallback {
           // TODO get this out to library clients
         }
 
+        Log.d(TAG,String.format(" 111111 newSize.width : %d , newSize.height : %d",newSize.width,newSize.height));
 
         if (newSize != null) {
           if (previewSize == null) {
@@ -210,40 +220,6 @@ public class CameraView extends ViewGroup implements AutoFocusCallback {
       }
     }
   }
-
-  private Camera.Size getOptimalPreviewSize(List<Camera.Size> sizes, int w, int h) {
-    final double ASPECT_TOLERANCE = 0.1;
-    double targetRatio = (double) w / h;
-    if (sizes == null) return null;
-
-    Camera.Size optimalSize = null;
-    double minDiff = Double.MAX_VALUE;
-
-    int targetHeight = h;
-
-    // Try to find an size match aspect ratio and size
-    for (Camera.Size size : sizes) {
-      double ratio = (double) size.width / size.height;
-      if (Math.abs(ratio - targetRatio) > ASPECT_TOLERANCE) continue;
-      if (Math.abs(size.height - targetHeight) < minDiff) {
-        optimalSize = size;
-        minDiff = Math.abs(size.height - targetHeight);
-      }
-    }
-
-    // Cannot find the one match the aspect ratio, ignore the requirement
-    if (optimalSize == null) {
-      minDiff = Double.MAX_VALUE;
-      for (Camera.Size size : sizes) {
-        if (Math.abs(size.height - targetHeight) < minDiff) {
-          optimalSize = size;
-          minDiff = Math.abs(size.height - targetHeight);
-        }
-      }
-    }
-    return optimalSize;
-  }
-
 
   @Override
   protected void onLayout(boolean changed, int l, int t, int r, int b) {
@@ -266,23 +242,19 @@ public class CameraView extends ViewGroup implements AutoFocusCallback {
           previewHeight = previewSize.height;
         }
       }
-
-      Log.d(TAG,String.format("previewWidth : $d , previewHeight : %d",previewWidth ,previewHeight));
-
-      boolean useFirstStrategy =
+      boolean useFirstStrategy=
           (width * previewHeight > height * previewWidth);
       boolean useFullBleed = true;
+
       if ((useFirstStrategy && !useFullBleed)
           || (!useFirstStrategy && useFullBleed)) {
-        final int scaledChildWidth =
-            previewWidth * height / previewHeight;
+        final int scaledChildWidth = previewWidth * height / previewHeight;
         child.layout((width - scaledChildWidth) / 2, 0,
-            (width + scaledChildWidth) / 2, height);
+            ((width + scaledChildWidth) / 2) - 1, height);
       } else {
-        final int scaledChildHeight =
-            previewHeight * width / previewWidth;
-        child.layout(0, (height - scaledChildHeight) / 2, width,
-            (height + scaledChildHeight) / 2);
+        final int scaledChildHeight = previewHeight * width / previewWidth;
+        child.layout(0, (height - scaledChildHeight) / 2,
+            width - 1, (height + scaledChildHeight) / 2);
       }
     }
   }
@@ -378,7 +350,14 @@ public class CameraView extends ViewGroup implements AutoFocusCallback {
     if (camera != null) {
       Camera.Parameters parameters = camera.getParameters();
 
-      parameters.setPreviewSize(previewSize.width, previewSize.height);
+//      if (w > 0 && h > 0)
+//        parameters.setPreviewSize(w, h);
+//      else
+        parameters.setPreviewSize(previewSize.width, previewSize.height);
+
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+        parameters.setRecordingHint(getRecordingHint() != RecordingHint.STILL_ONLY);
+      }
 
       requestLayout();
 
@@ -526,5 +505,21 @@ public class CameraView extends ViewGroup implements AutoFocusCallback {
   public void handleException(Exception e) {
     Log.e(getClass().getSimpleName(),
         "Exception in setPreviewDisplay()", e);
+  }
+
+  public RecordingHint getRecordingHint() {
+    if (mRecordingHint == null) {
+      initRecordingHint();
+    }
+
+    return(mRecordingHint);
+  }
+
+  private void initRecordingHint() {
+    mRecordingHint=mProfile.getDefaultRecordingHint();
+
+    if (mRecordingHint==RecordingHint.NONE) {
+      mRecordingHint=RecordingHint.ANY;
+    }
   }
 }

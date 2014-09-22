@@ -145,9 +145,9 @@ public class ZXingComponent extends FrameLayout implements Camera.PreviewCallbac
           rotatedData[x * height + height - y - 1] = bytes[x + y * width];
         }
       }
-//      int tmp = width;
-//      width = height;
-//      height = tmp;
+      int tmp = width;
+      width = height;
+      height = tmp;
       bytes = rotatedData;
     }
 
