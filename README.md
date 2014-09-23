@@ -10,5 +10,5 @@ add the repository to your build.gradle :
     }
     
     dependencies {
-        compile 'com.github.shen0816.ZXingComponent:library:1.0'
+        compile 'com.github.shen0816.ZXingComponent:library:1.0.2'
     }
